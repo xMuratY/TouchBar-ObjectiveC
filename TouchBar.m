@@ -75,7 +75,7 @@ NSInteger     ctxIdGlobal = 0;
                 return;
             [object->mItems enumerateObjectsUsingBlock:^(TBWMenuItem* altobject, NSUInteger idx, BOOL *stop)
             {
-                [array addObject:[NSString stringWithFormat:@"%ld:%ld:%@", object->ctxid, altobject->objid, altobject->title]];
+                [array addObject:[NSString stringWithFormat:@"%ld:%ld:%@:%d", object->ctxid, altobject->objid, altobject->title, altobject->state]];
             }];
         }else
         {
@@ -129,12 +129,16 @@ TBWrapperMenu* wrapperMenu;
         if( identifierSplitCount < 2 )
             return nil;
                 
-        NSInteger baseCounter = identifierSplitCount == 3 ? 1 : 0;
+        NSInteger baseCounter = identifierSplitCount == 4 ? 1 : 0;
         
         NSButton* mButton = [NSButton buttonWithTitle:identifierSplitResult[baseCounter+1] target:self action:@selector(glfwButtonAction:)];
         [mButton setTag:[identifierSplitResult[baseCounter] intValue]];
         if([mButton tag] >= 1000)
-            [mButton setBezelColor:NSColor.systemRedColor];
+        {
+            NSColor* btnColor = [identifierSplitResult[baseCounter+2] intValue] == 0 ? NSColor.systemRedColor : NSColor.systemGreenColor;
+            [mButton setBezelColor:btnColor];
+        }
+
         NSCustomTouchBarItem* mTouchBarItem = [[NSCustomTouchBarItem alloc] initWithIdentifier:identifier];
         [mTouchBarItem setView:mButton];
 
@@ -148,13 +152,19 @@ TBWrapperMenu* wrapperMenu;
             NSButton* senderbtn = (NSButton*)sender;
             NSColor* colorResult = ((NSButton*)sender).bezelColor == NSColor.systemRedColor ? NSColor.systemGreenColor : NSColor.systemRedColor;
             [senderbtn setBezelColor:colorResult];
+            
+            [mMenus enumerateObjectsUsingBlock:^(TBWMenuContext* object, NSUInteger idx, BOOL *stop) {
+                [object->mItems enumerateObjectsUsingBlock:^(TBWMenuItem* altobject, NSUInteger idx, BOOL *stop)
+                {
+                    if(altobject->objid == [sender tag])
+                        altobject->state = !altobject->state;
+                }];
+            }];
+            
             return;
         }
         
-        NSString* identifierstr = [sender title];
-        
-        printf("Clicked %s - %ld\n", identifierstr.UTF8String, [sender tag]);
-       
+        NSString* identifierstr = [sender title];       
         UpdateTouchBar([sender tag]);
     }
 @end
