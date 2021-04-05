@@ -1,33 +1,7 @@
+#import "TouchBar.h"
 
-#import <Foundation/Foundation.h>
-#import <Cocoa/Cocoa.h>
-
-void UpdateTouchBar(NSInteger iIndex);
-
-@interface TBWMenuItem : NSObject {
-    @public
-        NSString* title;
-        bool state;
-        NSInteger objid;
-        NSString *btnimage;
-        NSColor* color;
-}
-@end
 @implementation TBWMenuItem
-@end
-
-@interface TBWMenuContext : NSObject {
-@public
-    NSString* title;
-    NSInteger ctxid;
-    NSString *btnimage;
-    NSMutableArray<TBWMenuItem *> *mItems;
-}
-
--(TBWMenuItem*)AddButton:(NSString*)title;
--(TBWMenuItem*)AddButtonWithImage:(NSString*)title :(NSString*)image;
--(TBWMenuItem*)AddColorPicker:(NSString*)title :(NSColor*)defaultColor;
--(TBWMenuItem*)AddButton:(NSString*)title :(NSString*)image :(NSColor*)defaultColor;
+    
 @end
 
 NSInteger objIdGlobal = 1000;
@@ -52,6 +26,8 @@ NSInteger objIdGlobal = 1000;
         menuItem->objid = objIdGlobal;
         menuItem->btnimage = image;
         menuItem->color = defaultColor;
+        menuItem->btnimage = NULL;
+        menuItem->colReferance = NULL;
         
         [mItems addObject:menuItem];
         objIdGlobal++;
@@ -59,15 +35,9 @@ NSInteger objIdGlobal = 1000;
     }
 @end
 
+
 NSMutableArray<TBWMenuContext *> *mMenus;
 NSInteger     ctxIdGlobal = 0;
-
-@interface TBWrapperMenu : NSObject
-    - (TBWMenuContext*)BeginMenu:(NSString*)title;
-    - (TBWMenuContext*)BeginMenu:(NSString*)title : (NSString*) image;
-    - (void)EndMenu:(TBWMenuContext*)context;
-    - (NSArray<NSString*>*)GetCtx: (NSInteger)ctxID;
-@end
 
 @implementation TBWrapperMenu
 
@@ -189,6 +159,7 @@ TBWrapperMenu* wrapperMenu;
                     if(altobject->objid == [identifierSplitResult[1] intValue])
                     {
                         [colorPickerItem setColor:altobject->color];
+                        altobject->colReferance = colorPickerItem;
                         *stop1 = *stop2 = YES;
                         return;
                     }
@@ -218,7 +189,18 @@ TBWrapperMenu* wrapperMenu;
         
         NSCustomTouchBarItem* mTouchBarItem = [[NSCustomTouchBarItem alloc] initWithIdentifier:identifier];
         [mTouchBarItem setView:mButton];
-
+        
+        [mMenus enumerateObjectsUsingBlock:^(TBWMenuContext* object, NSUInteger idx1, BOOL *stop1) {
+            [object->mItems enumerateObjectsUsingBlock:^(TBWMenuItem* altobject, NSUInteger idx2, BOOL *stop2)
+            {
+                if(altobject->objid == [mButton tag])
+                {
+                    altobject->btnReferance = mTouchBarItem;
+                    *stop1 = *stop2 = YES;
+                    return;
+                }
+            }];
+        }];
         return mTouchBarItem;
     }
 
